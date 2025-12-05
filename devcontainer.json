@@ -1,0 +1,11 @@
+{
+  // Nome para o seu ambiente de desenvolvimento
+  "name": "React Vite Project",
+
+  // Comando que será executado UMA VEZ, após a criação do Codespace.
+  // Perfeito para instalar as dependências.
+  "postCreateCommand": "npm install",
+
+  // Encaminha a porta que o Vite usa para que o Codespaces a reconheça.
+  "forwardPorts": [5173]
+}
