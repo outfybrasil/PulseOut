@@ -128,7 +128,10 @@ function App() {
       const postChannel = supabase
       .channel('public:posts')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => {
-           fetchRealPosts();
+           // We re-fetch posts to see updated reactions from others, 
+           // but we must be careful not to overwrite local optimistic state if typing.
+           // For simplicity in MVP: refresh.
+           // fetchRealPosts(); // Commented to prevent overwrite during optimistic updates, relies on local state for UX
       })
       .subscribe();
       postsSubscription = postChannel;
@@ -183,7 +186,7 @@ function App() {
       const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
       if (error) throw error;
       
-      // Fetch follows logic
+      // Fetch follows (REAL DB)
       let followingIds: string[] = [];
       const { data: followData } = await supabase.from('follows').select('following_id').eq('follower_id', userId);
       if (followData) {
@@ -193,22 +196,8 @@ function App() {
       // Fetch bookmarks
       let bookmarks: string[] = data.bookmarks || [];
       
-      // Fetch Shelf: Robust LocalStorage Logic
-      let shelf: ShelfItem[] = [];
-      try {
-        const storageKey = `pulseout_shelf_${userId}`;
-        const localShelf = localStorage.getItem(storageKey);
-        
-        if (localShelf) {
-            shelf = JSON.parse(localShelf);
-        } else {
-            // Only try DB if local is missing (and if column exists)
-            shelf = (data as any).shelf || [];
-        }
-      } catch (e) {
-        console.error("Error parsing shelf data", e);
-        shelf = [];
-      }
+      // Fetch Shelf
+      let shelf: ShelfItem[] = (data as any).shelf || [];
 
       if (data) {
         // Special logic for Founder
@@ -257,6 +246,7 @@ function App() {
       setLoadingData(true);
       if (!user) return;
 
+      // 1. Fetch Posts with Relations
       const { data, error } = await supabase
         .from('posts')
         .select(`
@@ -267,6 +257,9 @@ function App() {
         `)
         .order('created_at', { ascending: false });
       
+      // 2. Fetch User's Reactions (REAL DB Source of Truth)
+      // Note: We intentionally fetch ALL reactions for the current user to map them to posts
+      // regardless of whether they are followed or global.
       const { data: myReactions, error: reactionError } = await supabase
         .from('post_reactions')
         .select('post_id, reaction_type')
@@ -281,8 +274,10 @@ function App() {
 
       if (data) {
           const mappedPosts: Post[] = data.map((p: any) => {
-             const myReaction = myReactions?.find((r: any) => r.post_id === p.id);
-             
+             // Find if user has reacted in DB
+             const dbReaction = myReactions?.find((r: any) => r.post_id === p.id);
+             const activeReaction = dbReaction ? (dbReaction.reaction_type as 'I' | 'P' | 'A' | 'T') : null;
+
              // Founder Check for Posts
              const isFounder = p.user?.handle?.toLowerCase() === '@gustavolanconi' || p.user?.name?.toLowerCase() === 'gustavolanconi';
 
@@ -302,7 +297,7 @@ function App() {
                  isTimeCapsule: !!p.scheduled_for, // Check if scheduled
                  scheduledFor: p.scheduled_for,
                  reactions: p.reactions || { I: 0, P: 0, A: 0, T: 0 },
-                 currentUserReaction: myReaction ? (myReaction.reaction_type as 'I' | 'P' | 'A' | 'T') : null, // Set from DB
+                 currentUserReaction: activeReaction, // Set directly from DB
                  pocketId: p.pocket_id,
                  pocketName: p.pocket?.name,
                  imageUrl: p.image_url,
@@ -514,7 +509,7 @@ function App() {
       }
   };
 
-  // --- LOGIC: PULSE SCORE & REACTIONS (UPDATED) ---
+  // --- LOGIC: PULSE SCORE & REACTIONS (REAL DATABASE) ---
   const handleReaction = async (postId: string, type: 'I' | 'P' | 'A' | 'T', currentReactions: any, authorId: string) => {
       if (!user) return;
       
@@ -525,74 +520,81 @@ function App() {
       let newReactions = { ...currentReactions };
       let updatedUserReaction: 'I' | 'P' | 'A' | 'T' | null = type;
 
-      // Logic for mutual exclusivity
+      // 1. CALCULATE NEW COUNTS (Strict Single Vote Logic)
       if (oldType === type) {
-          // Toggle OFF (Remove reaction)
+          // Toggle OFF: Removing the reaction
           newReactions[type] = Math.max(0, (newReactions[type] || 0) - 1);
           updatedUserReaction = null;
       } else {
-          // New Vote or Switch
+          // Switching OR New Vote
           if (oldType) {
-              // Decrement old
+              // Remove old vote count
               newReactions[oldType] = Math.max(0, (newReactions[oldType] || 0) - 1);
           }
-          // Increment new
+          // Add new vote count
           newReactions[type] = (newReactions[type] || 0) + 1;
       }
       
-      // 1. Optimistic update locally
-      setPosts(posts.map(p => p.id === postId ? { 
+      // 2. OPTIMISTIC UPDATE (Instant UI feedback)
+      setPosts(prevPosts => prevPosts.map(p => p.id === postId ? { 
           ...p, 
           reactions: newReactions, 
           currentUserReaction: updatedUserReaction 
       } : p));
 
-      // 2. Update Post Aggregates
-      const { error: postError } = await supabase
-        .from('posts')
-        .update({ reactions: newReactions })
-        .eq('id', postId);
+      try {
+          // 3. DATABASE UPDATE (Source of Truth)
+          if (updatedUserReaction) {
+              // UPSERT: Create or Update.
+              // REQUIRES SQL CONSTRAINT: UNIQUE(user_id, post_id)
+              const { error: upsertError } = await supabase.from('post_reactions').upsert({
+                  user_id: user.id,
+                  post_id: postId,
+                  reaction_type: updatedUserReaction
+              }, { onConflict: 'user_id, post_id' }); // Important: Matches the SQL unique constraint
+              
+              if(upsertError) throw upsertError;
 
-      if (postError) {
-          console.error("Error updating reaction count:", postError);
-          return; 
-      }
-
-      // 3. Persist User Choice (DB Sync)
-      if (updatedUserReaction) {
-          // Upsert: Create or Update user choice
-          await supabase.from('post_reactions').upsert({
-              user_id: user.id,
-              post_id: postId,
-              reaction_type: updatedUserReaction
-          }, { onConflict: 'user_id, post_id' });
-      } else {
-          // Delete: User removed reaction
-          await supabase.from('post_reactions').delete()
-              .eq('user_id', user.id)
-              .eq('post_id', postId);
-      }
-
-      // 4. Handle Scoring (Only on NEW votes, not switches for simplicity)
-      if (authorId !== user.id) { 
-          const getPoints = (t: string | null) => {
-             if (t === 'I') return 5;
-             if (t === 'P') return 2;
-             if (t === 'A') return 3;
-             if (t === 'T') return 1;
-             return 0;
-          };
-
-          const oldPoints = getPoints(oldType);
-          const newPoints = getPoints(updatedUserReaction);
-          const pointDiff = newPoints - oldPoints;
-
-          if (pointDiff !== 0) {
-            const { data: authorData } = await supabase.from('profiles').select('pulse_score').eq('id', authorId).single();
-            if (authorData) {
-                await supabase.from('profiles').update({ pulse_score: authorData.pulse_score + pointDiff }).eq('id', authorId);
-            }
+          } else {
+              // DELETE: User toggled off
+              const { error: deleteError } = await supabase.from('post_reactions').delete()
+                  .eq('user_id', user.id)
+                  .eq('post_id', postId);
+              
+              if(deleteError) throw deleteError;
           }
+
+          // 4. SYNC AGGREGATES
+          // Update the posts table with the new counts
+          const { error: postError } = await supabase
+            .from('posts')
+            .update({ reactions: newReactions })
+            .eq('id', postId);
+
+          if (postError) throw postError;
+
+          // 5. SCORING (Only for NEW reactions, not switches)
+          // Simple logic: If adding a reaction (and not just switching), grant points
+          if (updatedUserReaction && !oldType && authorId !== user.id) { 
+              const getPoints = (t: string | null) => {
+                 if (t === 'I') return 5;
+                 if (t === 'P') return 2;
+                 if (t === 'A') return 3;
+                 if (t === 'T') return 1;
+                 return 0;
+              };
+              const points = getPoints(updatedUserReaction);
+              
+              const { data: authorData } = await supabase.from('profiles').select('pulse_score').eq('id', authorId).single();
+              if (authorData) {
+                  await supabase.from('profiles').update({ pulse_score: authorData.pulse_score + points }).eq('id', authorId);
+              }
+          }
+
+      } catch (error) {
+          console.error("Reaction Sync Error:", error);
+          showToast("Erro ao salvar reação. Verifique sua conexão.");
+          // Rollback optimistic update on error would go here in a full production app
       }
   };
 
@@ -609,7 +611,7 @@ function App() {
       }
   };
 
-  // --- ACTIONS ---
+  // --- ACTIONS (REAL DATABASE) ---
 
   const handleToggleFollow = async (targetUserId: string) => {
       if (!user) return;
@@ -621,14 +623,16 @@ function App() {
           // Unfollow
           newFollowing = user.following.filter(id => id !== targetUserId);
           // DB Call
-          await supabase.from('follows').delete().eq('follower_id', user.id).eq('following_id', targetUserId);
-          showToast("Sintonia encerrada.");
+          const { error } = await supabase.from('follows').delete().eq('follower_id', user.id).eq('following_id', targetUserId);
+          if (!error) showToast("Sintonia encerrada.");
+          else console.error("Follow error", error);
       } else {
           // Follow
           newFollowing = [...user.following, targetUserId];
           // DB Call
-          await supabase.from('follows').insert({ follower_id: user.id, following_id: targetUserId });
-          showToast("Sintonizado! Posts aparecerão na sua aba Conexões.");
+          const { error } = await supabase.from('follows').insert({ follower_id: user.id, following_id: targetUserId });
+           if (!error) showToast("Sintonizado! Posts aparecerão na sua aba Conexões.");
+           else console.error("Follow error", error);
       }
 
       // Optimistic Update
@@ -1331,3 +1335,4 @@ function App() {
   );
 }
 export default App;
+
