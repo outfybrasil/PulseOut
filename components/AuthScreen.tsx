@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
-import { IconVitality, IconLock, IconMail, IconCheck, IconPockets, IconArbiter, IconDeep, IconQuote } from './Icons';
+import { IconVitality, IconLock, IconMail, IconCheck, IconPockets, IconArbiter, IconDeep, IconQuote, PulseOutLogo } from './Icons';
 import { supabase } from '../supabaseClient';
 import { getDailyPrompt } from '../constants';
+import { PrivacyPolicyModal } from './Modals';
 
 interface AuthScreenProps {
   onSuccess: () => void;
@@ -13,31 +15,23 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [dailyTeaser, setDailyTeaser] = useState('');
+  const [showPrivacy, setShowPrivacy] = useState(false);
   
   // Register State
   const [registerName, setRegisterName] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
-  const [registerHandle, setRegisterHandle] = useState('');
+  // Handle state removed from UI, will be auto-generated
   const [registerPassword, setRegisterPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   // Login State
-  const [loginIdentifier, setLoginIdentifier] = useState(''); // Email or Handle
+  const [loginEmail, setLoginEmail] = useState(''); 
   const [loginPassword, setLoginPassword] = useState('');
 
   useEffect(() => {
     // Show the consistent daily prompt instead of a random one
     setDailyTeaser(getDailyPrompt());
   }, []);
-
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setRegisterName(val);
-    if (!registerHandle || registerHandle === '@') {
-      const suggested = '@' + val.toLowerCase().replace(/\s+/g, '').slice(0, 10);
-      setRegisterHandle(suggested);
-    }
-  };
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,26 +51,17 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
       return;
     }
 
-    const formattedHandle = registerHandle.startsWith('@') ? registerHandle : `@${registerHandle}`;
+    // Auto-generate handle internally to satisfy DB constraints
+    // Format: @emailprefix_random
+    const emailPrefix = registerEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+    const randomSuffix = Math.floor(Math.random() * 10000);
+    const autoHandle = `@${emailPrefix}${randomSuffix}`;
 
     try {
-      const { data: existingHandle, error: handleCheckError } = await supabase
-        .from('profiles')
-        .select('handle')
-        .eq('handle', formattedHandle)
-        .maybeSingle();
-
-      if (handleCheckError) throw new Error("Erro ao verificar nome de usuário.");
-      if (existingHandle) {
-        setError(`O usuário ${formattedHandle} já existe.`);
-        setIsLoading(false);
-        return;
-      }
-
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: registerEmail,
         password: registerPassword,
-        options: { data: { name: registerName, handle: formattedHandle } }
+        options: { data: { name: registerName, handle: autoHandle } }
       });
 
       if (signUpError) {
@@ -87,11 +72,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
       if (data.user) {
         setSuccessMessage("Conta criada! Faça login para começar.");
         setIsLoginMode(true);
-        setLoginIdentifier(registerEmail);
+        setLoginEmail(registerEmail);
         setLoginPassword('');
         setRegisterName('');
         setRegisterEmail('');
-        setRegisterHandle('');
         setRegisterPassword('');
         setConfirmPassword('');
       }
@@ -109,30 +93,9 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
     setSuccessMessage(null);
     setIsLoading(true);
 
-    let signInEmail = loginIdentifier.trim();
-    // Check if input looks like an email
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(signInEmail);
+    const signInEmail = loginEmail.trim();
 
     try {
-      // Logic for Login by Username (Handle)
-      if (!isEmail) {
-         let handle = signInEmail;
-         if (!handle.startsWith('@')) handle = `@${handle}`;
-
-         // Attempt to fetch email from profiles based on handle
-         const { data, error } = await supabase
-           .from('profiles')
-           .select('email') // This column must exist in public.profiles for this to work
-           .eq('handle', handle)
-           .single();
-         
-         if (error || !data?.email) {
-           // Provide a specific hint if lookup fails
-           throw new Error('Usuário não encontrado ou login por handle indisponível. Tente seu e-mail.');
-         }
-         signInEmail = data.email;
-      }
-
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email: signInEmail,
         password: loginPassword,
@@ -154,21 +117,22 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
   return (
     <div className="min-h-screen bg-pulse-dark flex flex-col lg:flex-row relative overflow-hidden">
       
-      {/* --- Left Side: Manifesto & Value Prop --- */}
-      <div className="lg:w-1/2 p-8 lg:p-16 flex flex-col justify-center relative z-10 bg-gradient-to-br from-slate-900 via-pulse-dark to-slate-900 border-b lg:border-b-0 lg:border-r border-slate-800">
+      {/* Privacy Modal */}
+      {showPrivacy && <PrivacyPolicyModal onClose={() => setShowPrivacy(false)} />}
+
+      {/* --- Left Side: Manifesto & Value Prop (Hidden on Mobile) --- */}
+      <div className="hidden lg:flex lg:w-1/2 p-8 lg:p-16 flex-col justify-center relative z-10 bg-gradient-to-br from-slate-900 via-pulse-dark to-slate-900 border-r border-slate-800">
          <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-20">
             <div className="absolute top-10 left-10 w-64 h-64 bg-pulse-vitality/20 rounded-full blur-[100px]"></div>
          </div>
 
          <div className="max-w-md mx-auto lg:mx-0">
             <div className="flex items-center gap-3 mb-8">
-              <div className="w-12 h-12 bg-pulse-vitality rounded-full flex items-center justify-center shadow-lg shadow-yellow-500/20">
-                <IconVitality className="text-pulse-dark w-7 h-7" />
-              </div>
-              <h1 className="text-3xl lg:text-4xl font-bold text-white tracking-tight">PULSE<span className="text-pulse-vitality">OUT</span></h1>
+              <PulseOutLogo size={48} />
+              <h1 className="text-4xl font-bold text-white tracking-tight">PULSE<span className="text-pulse-vitality">OUT</span></h1>
             </div>
 
-            <h2 className="text-3xl lg:text-5xl font-extrabold text-white mb-6 leading-tight">
+            <h2 className="text-5xl font-extrabold text-white mb-6 leading-tight">
               Supere o <br/>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-pulse-vitality to-yellow-600">Superficial.</span>
             </h2>
@@ -188,37 +152,39 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="grid grid-cols-3 gap-6">
                <div className="flex flex-col gap-2">
                   <IconPockets className="text-indigo-400 w-6 h-6" />
                   <span className="font-bold text-white">Pockets</span>
-                  <span className="text-xs text-slate-500">Grupos limitados a 50 pessoas.</span>
+                  <span className="text-xs text-slate-500">Micro-Grupos</span>
                </div>
                <div className="flex flex-col gap-2">
                   <IconDeep className="text-emerald-400 w-6 h-6" />
-                  <span className="font-bold text-white">Profundidade</span>
-                  <span className="text-xs text-slate-500">Recompensas por conteúdo denso.</span>
+                  <span className="font-bold text-white">Profundo</span>
+                  <span className="text-xs text-slate-500">Qualidade</span>
                </div>
                <div className="flex flex-col gap-2">
                   <IconArbiter className="text-rose-400 w-6 h-6" />
                   <span className="font-bold text-white">Árbitros</span>
-                  <span className="text-xs text-slate-500">Moderação humana e justa.</span>
+                  <span className="text-xs text-slate-500">Justiça</span>
                </div>
             </div>
          </div>
       </div>
 
       {/* --- Right Side: Auth Forms --- */}
-      <div className="lg:w-1/2 flex items-center justify-center p-4 lg:p-8 bg-pulse-base">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-pulse-base h-screen overflow-y-auto">
         <div className="w-full max-w-md">
            
            {/* Mobile Header (Only visible on small screens) */}
-           <div className="lg:hidden text-center mb-8">
-              <h3 className="text-xl font-bold text-white">Bem-vindo de volta</h3>
+           <div className="lg:hidden flex flex-col items-center mb-8 animate-fade-in">
+              <PulseOutLogo size={56} />
+              <h1 className="text-2xl font-bold text-white mt-3 tracking-tight">PULSE<span className="text-pulse-vitality">OUT</span></h1>
+              <p className="text-slate-400 text-sm mt-1">Conexão real, sem ruído.</p>
            </div>
 
            {/* Auth Card */}
-           <div className="bg-pulse-dark border border-slate-800 rounded-2xl p-8 shadow-2xl">
+           <div className="bg-pulse-dark border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl">
               <div className="flex border-b border-slate-800 mb-8">
                 <button 
                   onClick={() => { setIsLoginMode(true); setError(null); setSuccessMessage(null); }}
@@ -250,16 +216,16 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
               {isLoginMode ? (
                 <form onSubmit={handleLoginSubmit} className="space-y-5">
                   <div>
-                    <label className="block text-slate-400 text-xs uppercase tracking-wider font-bold mb-2">E-mail ou Usuário</label>
+                    <label className="block text-slate-400 text-xs uppercase tracking-wider font-bold mb-2">E-mail</label>
                     <div className="relative">
                       <IconMail className="absolute left-3 top-3.5 text-slate-500 w-4 h-4" />
                       <input 
                         required
-                        type="text" 
+                        type="email" 
                         className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-10 pr-3 text-white focus:border-pulse-vitality focus:outline-none transition-colors placeholder-slate-600"
-                        placeholder="seu@email.com ou @usuario"
-                        value={loginIdentifier}
-                        onChange={(e) => setLoginIdentifier(e.target.value)}
+                        placeholder="seu@email.com"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
                       />
                     </div>
                   </div>
@@ -301,7 +267,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-pulse-vitality focus:outline-none"
                       placeholder="Seu nome"
                       value={registerName}
-                      onChange={handleNameChange}
+                      onChange={(e) => setRegisterName(e.target.value)}
                     />
                   </div>
                   <div>
@@ -315,16 +281,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                       onChange={(e) => setRegisterEmail(e.target.value)}
                     />
                   </div>
-                  <div>
-                    <label className="block text-slate-400 text-xs uppercase tracking-wider font-bold mb-1">Handle (@)</label>
-                    <input 
-                      required
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-200 focus:border-pulse-vitality focus:outline-none"
-                      placeholder="@usuario"
-                      value={registerHandle}
-                      onChange={(e) => setRegisterHandle(e.target.value)}
-                    />
-                  </div>
+                  {/* Handle input removed */}
                   <div className="flex gap-4">
                     <div className="flex-1">
                       <label className="block text-slate-400 text-xs uppercase tracking-wider font-bold mb-1">Senha</label>
@@ -361,7 +318,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
            </div>
            
            <p className="text-center text-slate-600 text-xs mt-6">
-             Ao entrar, você concorda com o nosso <span className="underline cursor-pointer">Pacto de Não-Toxicidade</span>.
+             Ao entrar, você concorda com o nosso <span className="underline cursor-pointer hover:text-white transition-colors">Pacto de Não-Toxicidade</span> e nossa <span onClick={() => setShowPrivacy(true)} className="underline cursor-pointer hover:text-pulse-vitality transition-colors">Política de Privacidade</span>.
            </p>
         </div>
       </div>

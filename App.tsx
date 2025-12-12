@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import Layout from './components/Layout';
 import PostCard from './components/PostCard';
@@ -847,7 +848,8 @@ function App() {
         name: editForm.name, 
         bio: editForm.bio, 
         avatar: editForm.avatar, 
-        is_arbiter: editForm.isArbiter
+        is_arbiter: editForm.isArbiter,
+        shelf: editForm.shelf // Fixed: Added shelf persistence
       }).eq('id', user.id);
 
       if (error) {
@@ -906,7 +908,18 @@ function App() {
 
     return (
       <div className="animate-fade-in relative">
-        <div className="mb-6">
+        
+        {/* Mobile Sticky Tab Bar */}
+        <div className="sticky top-[60px] z-30 bg-pulse-base/95 backdrop-blur-md border-b border-slate-800 md:hidden mb-4 -mx-4 px-4 pt-2 pb-0 flex justify-between items-center shadow-lg">
+           <div className="flex gap-4 w-full">
+              <button onClick={() => { setFeedTab('GLOBAL'); setCompassIndex(0); }} className={`flex-1 pb-2 text-sm font-bold border-b-2 transition-colors ${feedTab === 'GLOBAL' ? 'border-pulse-vitality text-white' : 'border-transparent text-slate-500'}`}>Global</button>
+              <button onClick={() => { setFeedTab('MY_POCKETS'); setCompassIndex(0); }} className={`flex-1 pb-2 text-sm font-bold border-b-2 transition-colors ${feedTab === 'MY_POCKETS' ? 'border-pulse-vitality text-white' : 'border-transparent text-slate-500'}`}>Pockets</button>
+              <button onClick={() => { setFeedTab('CONNECTIONS'); setCompassIndex(0); }} className={`flex-1 pb-2 text-sm font-bold border-b-2 transition-colors ${feedTab === 'CONNECTIONS' ? 'border-pulse-vitality text-white' : 'border-transparent text-slate-500'}`}>Conexões</button>
+           </div>
+        </div>
+
+        {/* Desktop Header */}
+        <div className="hidden md:block mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-3xl font-bold text-white">Feed Pulse</h2>
             <div className="flex gap-2">
@@ -917,7 +930,6 @@ function App() {
                 <button onClick={() => handleOpenCreatePost()} className="bg-pulse-vitality text-pulse-dark hover:bg-yellow-400 font-bold px-4 py-2 rounded-xl flex items-center gap-2"><IconPlus className="w-5 h-5" /><span className="hidden md:inline">Nova Postagem</span></button>
             </div>
           </div>
-          {/* Feed Tabs with new CONNECTIONS option */}
           <div className="flex bg-pulse-base p-1 rounded-xl inline-flex border border-slate-800 overflow-x-auto max-w-full">
             <button onClick={() => { setFeedTab('GLOBAL'); setCompassIndex(0); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap ${feedTab === 'GLOBAL' ? 'bg-pulse-light text-white' : 'text-slate-500'}`}><IconGlobe className="w-4 h-4" /> Global</button>
             <button onClick={() => { setFeedTab('MY_POCKETS'); setCompassIndex(0); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap ${feedTab === 'MY_POCKETS' ? 'bg-pulse-light text-white' : 'text-slate-500'}`}><IconPockets className="w-4 h-4" /> Pockets</button>
@@ -930,7 +942,7 @@ function App() {
         ) : filteredPosts.length > 0 ? (
           <div>
             {feedMode === 'SCROLL' ? (
-                <div className="space-y-6">
+                <div className="space-y-4 md:space-y-6">
                     {filteredPosts.map(post => (
                         <PostCard 
                             key={post.id} 
@@ -1000,7 +1012,7 @@ function App() {
 
     if (activePing) {
         return (
-            <div className="animate-fade-in flex flex-col h-[calc(100vh-100px)] md:h-[600px] bg-pulse-base border border-slate-800 rounded-2xl overflow-hidden relative">
+            <div className="animate-fade-in flex flex-col h-[calc(100vh-140px)] md:h-[600px] bg-pulse-base border border-slate-800 rounded-2xl overflow-hidden relative">
                 <div className="bg-slate-900/80 p-4 border-b border-slate-800 flex items-center gap-3 backdrop-blur-md sticky top-0 z-10">
                     <button onClick={() => { setActivePingId(null); setActiveMessages([]); }} className="p-2 -ml-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-800"><IconBack className="w-5 h-5" /></button>
                     <img src={activePing.fromAvatar} alt={activePing.fromUser} className="w-10 h-10 rounded-full" />
@@ -1024,11 +1036,11 @@ function App() {
 
   const renderPocketsView = () => (
     <div className="animate-fade-in">
-      <div className="mb-8 flex justify-between items-end">
+      <div className="mb-8 flex justify-between items-end px-4 md:px-0">
         <div><h2 className="text-3xl font-bold text-white mb-2">Pockets</h2><p className="text-slate-400">Micro-comunidades limitadas.</p></div>
         <button onClick={() => setShowCreatePocketModal(true)} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-xl flex items-center gap-2"><IconPlus className="w-5 h-5" /> Criar</button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{pockets.map(pocket => (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-4 md:px-0">{pockets.map(pocket => (
         <div key={pocket.id} className={`bg-pulse-base border rounded-2xl p-6 relative overflow-hidden group ${pocket.isCampfire ? 'border-orange-500/30' : 'border-slate-700'}`}>
             {pocket.isCampfire && (<div className="absolute top-0 right-0 p-3"><IconFlame className="text-orange-500 w-5 h-5" /></div>)}
             
@@ -1050,7 +1062,7 @@ function App() {
   );
 
   const renderProfileView = () => (
-      <div className="animate-fade-in">
+      <div className="animate-fade-in px-4 md:px-0">
           <div className="bg-pulse-base border border-slate-800 rounded-2xl p-6 md:p-8 mb-8 relative">
              <div className="absolute top-4 right-4 flex gap-2 z-10">
                 {isEditingProfile ? (<button onClick={handleSaveProfile} className="flex items-center gap-2 bg-pulse-vitality text-pulse-dark px-4 py-2 rounded-xl font-bold text-sm"><IconSave className="w-4 h-4" /> Salvar</button>) : (<button onClick={() => { 
@@ -1151,7 +1163,8 @@ function App() {
                         <IconBadgeCheck className="w-6 h-6 text-pulse-vitality fill-current" />
                     )}
                 </h2>
-                <p className="text-pulse-vitality font-medium text-sm mb-4">{user?.handle}</p><p className="text-slate-300 max-w-lg mx-auto md:mx-0 leading-relaxed">{user?.bio || "Sem bio."}</p>
+                {/* Handle removed from display */}
+                <p className="text-slate-300 max-w-lg mx-auto md:mx-0 leading-relaxed mt-2">{user?.bio || "Sem bio."}</p>
                 <div className="flex items-center gap-4 mt-4 justify-center md:justify-start">
                     <div className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
                         <IconUserCheck className="w-3 h-3" /> Sintonizados: <span className="text-white ml-1">{user?.following?.length || 0}</span>
@@ -1278,7 +1291,7 @@ function App() {
   );
 
   const renderArbiterView = () => (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in px-4 md:px-0">
        <div className="flex items-center gap-3 mb-6"><div className="bg-red-900/30 p-3 rounded-full"><IconGavel className="w-8 h-8 text-red-400" /></div><div><h2 className="text-3xl font-bold text-white">Zona dos Árbitros</h2></div></div>
        {reports.length > 0 ? (<div className="grid gap-4">{reports.map(report => (<div key={report.id} className="bg-pulse-base border border-slate-800 rounded-xl p-6"><div className="flex justify-between items-start mb-4"><span className="bg-red-900/30 text-red-400 text-xs px-2 py-1 rounded-md font-bold uppercase">{report.reason}</span><span className="text-slate-500 text-xs">Autor: {report.author}</span></div><p className="text-slate-200 italic mb-6">"{report.content}"</p><div className="flex gap-4"><button onClick={() => handleArbiterAction(report.id, 'DISMISS')} className="flex-1 py-3 rounded-lg border border-slate-700 text-slate-400 font-bold flex items-center justify-center gap-2"><IconClose className="w-4 h-4" /> Absolver</button><button onClick={() => handleArbiterAction(report.id, 'PENALIZE')} className="flex-1 py-3 rounded-lg bg-red-600/20 border border-red-600/50 text-red-400 font-bold flex items-center justify-center gap-2"><IconGavel className="w-4 h-4" /> Penalizar</button></div></div>))}</div>) : (<div className="text-center py-20 bg-slate-800/20 rounded-2xl border border-dashed border-slate-700"><IconCheck className="w-16 h-16 text-emerald-500/50 mx-auto mb-4" /><h3 className="text-xl font-bold text-white mb-2">Tudo Limpo!</h3></div>)}
     </div>

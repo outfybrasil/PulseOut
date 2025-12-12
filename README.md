@@ -1,20 +1,39 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# PULSEOUT - Rede Social de Conexões Genuínas
 
-# Run and deploy your AI Studio app
+PULSEOUT é uma rede social focada em positividade, amizades profundas e moderação humana, construída para combater a toxicidade das redes tradicionais.
 
-This contains everything you need to run your app locally.
+## Tecnologias
 
-View your app in AI Studio: https://ai.studio/apps/drive/1Qj0XGC9j0jzNHU-fygyat3ua4IaZlNCV
+- **React** (Frontend)
+- **Tailwind CSS** (Estilização)
+- **Supabase** (Backend: Auth, Database, Realtime)
+- **Vite** (Build Tool)
 
-## Run Locally
+## Como rodar localmente
 
-**Prerequisites:**  Node.js
+1. Clone o repositório:
+   ```bash
+   git clone https://github.com/SEU-USUARIO/pulseout.git
+   cd pulseout
+   ```
 
+2. Instale as dependências:
+   ```bash
+   npm install
+   ```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+3. Configure as variáveis de ambiente:
+   - Crie um arquivo `.env` na raiz.
+   - Adicione suas chaves do Supabase se necessário (atualmente hardcoded no `supabaseClient.ts`, mas recomendado mover para env variables para segurança).
+
+4. Rode o projeto:
+   ```bash
+   npm run dev
+   ```
+
+## Funcionalidades Principais
+
+- **Pockets:** Micro-comunidades com limite de membros.
+- **Pings:** Sistema de mensagens diretas limitado (5/dia) para valorizar a intenção.
+- **Pulse Score:** Sistema de reputação baseado em comportamento.
+- **Árbitros:** Moderação distribuída pela comunidade.

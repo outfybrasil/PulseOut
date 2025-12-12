@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Post, Comment } from '../types';
 import { 
@@ -5,7 +6,7 @@ import {
     IconCheck, IconTurtle, IconMessageSquare, IconSend, IconInfo, 
     IconTrash, IconUserCheck, IconBookmark, IconMaximize, IconMinimize, 
     IconUser, IconClock, IconMic, IconMicOff, IconPlay, IconBadgeCheck,
-    IconCrown
+    IconCrown, IconClose
 } from './Icons';
 
 interface PostCardProps {
@@ -85,8 +86,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, isCurrentUser, isFollowing, i
   return (
     <div className={`
         bg-pulse-base border transition-all duration-500 relative group/card
-        ${post.isSlowMode ? 'border-cyan-500/30' : (isLocked ? 'border-indigo-500/30 border-dashed' : 'border-slate-800')} 
-        ${isFocused ? 'fixed inset-0 z-50 p-8 md:p-16 overflow-y-auto m-0 rounded-none' : 'rounded-2xl p-6 mb-6 shadow-sm hover:shadow-md'}
+        ${post.isSlowMode ? 'border-cyan-500/30' : (isLocked ? 'border-indigo-500/30 border-dashed' : 'border-slate-800 md:border-slate-800 border-x-0 md:border-x')} 
+        ${isFocused ? 'fixed inset-0 z-50 p-8 md:p-16 overflow-y-auto m-0 rounded-none' : 'rounded-none md:rounded-2xl p-4 md:p-6 mb-2 md:mb-6 shadow-sm hover:shadow-md'}
     `}>
       
       {/* Focus Mode Close Button */}
@@ -128,21 +129,28 @@ const PostCard: React.FC<PostCardProps> = ({ post, isCurrentUser, isFollowing, i
               </h3>
               {!isCurrentUser && (
                  <button 
-                   onClick={onToggleFollow}
-                   className={`flex items-center gap-1 px-2 py-0.5 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider ${
+                   onClick={(e) => {
+                     e.stopPropagation(); // Prevent card click issues
+                     onToggleFollow();
+                   }}
+                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full transition-all text-[10px] font-bold uppercase tracking-wider ${
                        isFollowing 
-                       ? 'text-emerald-400 bg-emerald-900/20 border border-emerald-500/30' 
-                       : 'text-slate-500 hover:text-pulse-vitality bg-slate-800 border border-slate-700 hover:border-pulse-vitality'
+                       ? 'text-emerald-400 bg-emerald-900/20 border border-emerald-500/30 hover:bg-red-900/20 hover:text-red-400 hover:border-red-500/30 group/btn' 
+                       : 'text-pulse-dark bg-pulse-vitality hover:bg-yellow-400 border border-transparent shadow-lg shadow-yellow-500/20'
                    }`}
-                   title={isFollowing ? "Desconectar" : "Sintonizar nas ideias deste usuário"}
+                   title={isFollowing ? "Parar de Sintonizar" : "Sintonizar nas ideias deste usuário"}
                  >
                    {isFollowing ? (
                        <>
-                        <IconCheck className="w-3 h-3" />
+                        <IconCheck className="w-3 h-3 group-hover/btn:hidden" />
+                        <IconClose className="w-3 h-3 hidden group-hover/btn:block" />
+                        <span className="group-hover/btn:hidden">Sintonizado</span>
+                        <span className="hidden group-hover/btn:inline">Parar</span>
                        </>
                    ) : (
                        <>
                         <IconUserPlus className="w-3 h-3" />
+                        <span>Sintonizar</span>
                        </>
                    )}
                  </button>
@@ -159,7 +167,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, isCurrentUser, isFollowing, i
         <div className="flex items-center gap-2">
             {/* Focus Mode Button */}
             {!isFocused && !isLocked && (
-                <button onClick={() => setIsFocused(true)} className="p-2 text-slate-600 hover:text-pulse-vitality hover:bg-slate-800 rounded-lg" title="Leitura Imersiva">
+                <button onClick={() => setIsFocused(true)} className="p-2 text-slate-600 hover:text-pulse-vitality hover:bg-slate-800 rounded-lg hidden md:block" title="Leitura Imersiva">
                     <IconMaximize className="w-4 h-4" />
                 </button>
             )}
@@ -305,7 +313,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, isCurrentUser, isFollowing, i
                         {/* Info Button */}
                         <button 
                             onClick={(e) => { e.stopPropagation(); setShowLegend(!showLegend); }}
-                            className={`ml-1 p-1.5 rounded-full transition-colors ${showLegend ? 'bg-slate-800 text-pulse-vitality' : 'text-slate-600 hover:text-slate-400 hover:bg-slate-800/50'}`}
+                            className={`ml-1 p-1.5 rounded-full transition-colors hidden md:block ${showLegend ? 'bg-slate-800 text-pulse-vitality' : 'text-slate-600 hover:text-slate-400 hover:bg-slate-800/50'}`}
                             title="Entenda as reações"
                         >
                             <IconInfo className="w-3.5 h-3.5" />

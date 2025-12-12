@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Users, 
@@ -139,3 +140,49 @@ export const IconInsight = ({ className }: { className?: string }) => <Lightbulb
 export const IconPractical = ({ className }: { className?: string }) => <Wrench className={className} />;
 export const IconAmplifier = ({ className }: { className?: string }) => <Megaphone className={className} />;
 export const IconThanks = ({ className }: { className?: string }) => <Heart className={className} />;
+
+// --- OFFICIAL APP LOGO (SVG) - "The Frequency Wave" ---
+// Replaced the medical heartbeat with a soundwave/frequency bar motif.
+// Added 'animate-pulse' with staggered delays to create a "living" wave effect.
+export const PulseOutLogo = ({ className, size = 32 }: { className?: string, size?: number }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 32 32" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    {/* Dark Background Container (Rounded Squircle) */}
+    <rect x="0" y="0" width="32" height="32" rx="8" className="fill-pulse-vitality" />
+    
+    {/* Inner Cutout (Dark Mode) */}
+    <rect x="2" y="2" width="28" height="28" rx="6" className="fill-pulse-dark" />
+
+    {/* The Frequency Bars (Rhythm/Sound/Activity) - Living Animation */}
+    {/* Bar 1 */}
+    <rect 
+        x="7" y="13" width="3" height="6" rx="1.5" fill="#FACC15" 
+        className="animate-pulse" 
+        style={{ animationDelay: '0ms', animationDuration: '2s' }} 
+    />
+    {/* Bar 2 (Tallest) */}
+    <rect 
+        x="12" y="8" width="3" height="16" rx="1.5" fill="#FACC15" 
+        className="animate-pulse" 
+        style={{ animationDelay: '300ms', animationDuration: '2s' }} 
+    />
+    {/* Bar 3 */}
+    <rect 
+        x="17" y="11" width="3" height="10" rx="1.5" fill="#FACC15" 
+        className="animate-pulse" 
+        style={{ animationDelay: '150ms', animationDuration: '2s' }} 
+    />
+    {/* Bar 4 */}
+    <rect 
+        x="22" y="14" width="3" height="4" rx="1.5" fill="#FACC15" 
+        className="animate-pulse" 
+        style={{ animationDelay: '450ms', animationDuration: '2s' }} 
+    />
+  </svg>
+);

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { NON_TOXICITY_PACT } from '../constants';
 import { Pocket, User } from '../types';
@@ -6,6 +7,99 @@ import {
     IconTrash, IconPlus, IconCheck, IconVitality, IconShield, IconUserCheck, 
     IconSearch, IconUserPlus, IconUser, IconClock, IconBadgeCheck, IconCrown
 } from './Icons';
+
+// --- Privacy Policy Modal (Updated Visuals) ---
+export const PrivacyPolicyModal = ({ onClose }: { onClose: () => void }) => {
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-pulse-base border border-slate-700 rounded-2xl max-w-2xl w-full p-8 shadow-2xl relative animate-fade-in-up max-h-[85vh] overflow-y-auto custom-scrollbar">
+        <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-white">
+          <IconClose />
+        </button>
+        
+        <header className="mb-6 border-b border-slate-800 pb-4 text-center">
+            <h2 className="text-2xl font-bold text-white mb-1 tracking-tight">PULSE<span className="text-pulse-vitality">OUT</span></h2>
+            <p className="text-sm font-bold text-slate-400 uppercase tracking-wide">Política de Privacidade e Transparência</p>
+        </header>
+        
+        <div className="space-y-8 text-sm text-slate-300 leading-relaxed">
+            <section>
+                <h3 className="text-white font-bold text-lg mb-3 flex items-center gap-3">
+                    <span className="w-1 h-6 bg-pulse-vitality rounded-full shadow-[0_0_10px_rgba(250,204,21,0.5)]"></span>
+                    1. Princípio da Transparência Radical
+                </h3>
+                <p className="pl-4 border-l border-slate-800 ml-0.5">
+                    No PULSEOUT, acreditamos que <strong className="text-white">você não é o produto</strong>. Nossa arquitetura é desenhada para proteger sua identidade digital, não para explorá-la ou vendê-la.
+                </p>
+            </section>
+
+            <section>
+                <h3 className="text-white font-bold text-lg mb-3 flex items-center gap-3">
+                    <span className="w-1 h-6 bg-pulse-vitality rounded-full"></span>
+                    2. Dados que Coletamos
+                </h3>
+                <ul className="space-y-3 ml-1">
+                    <li className="flex gap-3 items-start bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+                        <span className="text-pulse-vitality font-bold text-lg leading-none">•</span> 
+                        <span><strong className="text-white block mb-0.5">Essenciais</strong> Nome, E-mail e Senha (criptografada).</span>
+                    </li>
+                    <li className="flex gap-3 items-start bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+                        <span className="text-pulse-vitality font-bold text-lg leading-none">•</span> 
+                        <span><strong className="text-white block mb-0.5">Conteúdo</strong> Seus Posts, Pockets criados e interações (Reações, Comentários).</span>
+                    </li>
+                    <li className="flex gap-3 items-start bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+                        <span className="text-pulse-vitality font-bold text-lg leading-none">•</span> 
+                        <span><strong className="text-white block mb-0.5">Metadados</strong> Logs técnicos estritamente para segurança e prevenção de abusos.</span>
+                    </li>
+                </ul>
+            </section>
+
+            <section>
+                <h3 className="text-white font-bold text-lg mb-3 flex items-center gap-3">
+                    <span className="w-1 h-6 bg-pulse-vitality rounded-full"></span>
+                    3. Como Usamos Seus Dados
+                </h3>
+                <ul className="space-y-2 ml-4 list-disc marker:text-pulse-vitality">
+                    <li>Para conectar você a outros seres humanos.</li>
+                    <li>Para calcular seu <strong>PULSE Score</strong> (reputação interna).</li>
+                    <li>Para moderação comunitária.</li>
+                </ul>
+                <div className="mt-4 text-pulse-vitality font-bold bg-yellow-900/10 p-4 rounded-xl border border-yellow-500/20 text-center shadow-lg shadow-yellow-900/5">
+                    <IconShield className="w-6 h-6 mx-auto mb-2 opacity-80" />
+                    Jamais vendemos seus dados para anunciantes.
+                </div>
+            </section>
+            
+            <section>
+                <h3 className="text-white font-bold text-lg mb-3 flex items-center gap-3">
+                    <span className="w-1 h-6 bg-pulse-vitality rounded-full"></span>
+                    4. Cookies e Rastreamento
+                </h3>
+                <p className="pl-4 text-slate-400">
+                    Usamos cookies estritamente necessários para manter você logado. Não usamos pixels de rastreamento de terceiros (como Facebook ou Google Ads) para monitorar você fora daqui.
+                </p>
+            </section>
+
+             <section>
+                <h3 className="text-white font-bold text-lg mb-3 flex items-center gap-3">
+                    <span className="w-1 h-6 bg-pulse-vitality rounded-full"></span>
+                    5. Seus Direitos
+                </h3>
+                <p className="pl-4 text-slate-400">
+                    Você é dono da sua voz. Pode solicitar a exportação ou exclusão total dos seus dados a qualquer momento.
+                </p>
+            </section>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-slate-800">
+             <button onClick={onClose} className="w-full bg-pulse-vitality hover:bg-yellow-400 text-pulse-dark font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-yellow-500/20 active:scale-[0.99]">
+                 Entendi e Concordo
+             </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // --- Search Users Modal ---
 export const SearchUsersModal = ({ 
@@ -52,7 +146,7 @@ export const SearchUsersModal = ({
                     <input 
                         autoFocus
                         type="text" 
-                        placeholder="Nome ou @handle..." 
+                        placeholder="Nome..." 
                         className="w-full bg-pulse-dark border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-white focus:border-pulse-vitality focus:outline-none"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
@@ -84,20 +178,23 @@ export const SearchUsersModal = ({
                                                     <IconBadgeCheck className="w-3 h-3 text-pulse-vitality fill-current" />
                                                 )}
                                             </p>
-                                            <p className="text-xs text-slate-500">{user.handle}</p>
+                                            {/* Handle removed */}
                                         </div>
                                     </div>
                                     <button 
                                         onClick={() => onToggleFollow(user.id)}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
+                                        className={`px-3 py-1.5 rounded-lg text-[10px] uppercase tracking-wider font-bold flex items-center gap-1 transition-all group/btn ${
                                             isFollowing 
-                                            ? 'bg-emerald-900/20 text-emerald-400 border border-emerald-900' 
-                                            : 'bg-pulse-vitality text-pulse-dark hover:bg-yellow-400'
+                                            ? 'bg-emerald-900/20 text-emerald-400 border border-emerald-900 hover:bg-red-900/20 hover:text-red-400 hover:border-red-500/30' 
+                                            : 'bg-pulse-vitality text-pulse-dark hover:bg-yellow-400 border border-transparent'
                                         }`}
                                     >
                                         {isFollowing ? (
                                             <>
-                                                <IconCheck className="w-3 h-3" /> Sintonizado
+                                                <IconCheck className="w-3 h-3 group-hover/btn:hidden" />
+                                                <IconClose className="w-3 h-3 hidden group-hover/btn:block" />
+                                                <span className="group-hover/btn:hidden">Sintonizado</span>
+                                                <span className="hidden group-hover/btn:inline">Parar</span>
                                             </>
                                         ) : (
                                             <>
@@ -404,7 +501,7 @@ export const CreatePostModal = ({
                       </label>
                       <input 
                         type="text" 
-                        placeholder="@handle do parceiro" 
+                        placeholder="Nome do parceiro" 
                         className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white"
                         value={coAuthor}
                         onChange={(e) => setCoAuthor(e.target.value)}
@@ -622,13 +719,13 @@ export const ApplicationModal = ({
           {needsSponsor && (
               <div>
                   <label className="block text-sm font-medium text-indigo-400 mb-2 flex items-center gap-2">
-                     <IconUserCheck className="w-4 h-4" /> Handle do Padrinho (@)
+                     <IconUserCheck className="w-4 h-4" /> Nome do Padrinho
                   </label>
                   <input 
                     required
                     type="text"
                     className="w-full bg-pulse-dark border border-indigo-500/50 rounded-xl p-3 text-slate-200 focus:border-indigo-500 outline-none transition-colors placeholder-slate-600"
-                    placeholder="@nomedousuario"
+                    placeholder="Nome do usuário"
                     value={sponsorHandle}
                     onChange={(e) => setSponsorHandle(e.target.value)}
                   />

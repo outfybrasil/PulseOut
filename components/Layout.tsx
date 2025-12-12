@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { User, ViewState } from '../types';
 import { getDailyPrompt } from '../constants';
@@ -15,7 +16,8 @@ import {
   IconUserCheck,
   IconSearch,
   IconBadgeCheck,
-  IconCrown
+  IconCrown,
+  PulseOutLogo // Imported the new Logo
 } from './Icons';
 
 interface LayoutProps {
@@ -73,7 +75,7 @@ const Layout: React.FC<LayoutProps> = ({ user, children, currentView, onNavigate
             onClick={() => onNavigate(view)}
             className={`flex flex-col items-center justify-center w-full py-1 relative ${isActive ? 'text-pulse-vitality' : 'text-slate-500'}`}
         >
-            <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-pulse-vitality/10' : ''}`}>
+            <div className={`p-2 rounded-xl transition-all ${isActive ? 'bg-pulse-vitality/10' : ''}`}>
                 <Icon className={`w-6 h-6 ${isActive ? 'stroke-[2.5px]' : 'stroke-2'}`} />
             </div>
             {hasBadge && badgeCount && badgeCount > 0 && (
@@ -106,52 +108,43 @@ const Layout: React.FC<LayoutProps> = ({ user, children, currentView, onNavigate
       
       {/* --- MOBILE LAYOUT --- */}
 
-      {/* Mobile Top Header: Clean & Simple */}
-      <header className="md:hidden bg-pulse-base/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex justify-between items-center sticky top-0 z-30 w-full shrink-0">
-        <div className="flex items-center space-x-2" onClick={() => onNavigate('HOME')}>
-          <div className="w-8 h-8 bg-pulse-vitality rounded-full flex items-center justify-center shadow-sm">
-             <IconVitality className="text-pulse-dark w-5 h-5" />
-          </div>
-          <h1 className="text-lg font-bold text-white tracking-tight">PULSE<span className="text-pulse-vitality">OUT</span></h1>
+      {/* Mobile Top Header: Optimized & Clean */}
+      <header className="md:hidden bg-pulse-base/95 backdrop-blur-xl border-b border-slate-800 px-4 py-2.5 flex justify-between items-center sticky top-0 z-40 w-full shrink-0 shadow-sm">
+        <div className="flex items-center space-x-2.5" onClick={() => onNavigate('HOME')}>
+          <PulseOutLogo size={28} />
+          <h1 className="text-lg font-extrabold text-white tracking-tight">PULSE</h1>
         </div>
         
-        {/* User Score Pill & Search */}
+        {/* User Actions - Minimized Clutter */}
         <div className="flex items-center gap-3">
-             <button onClick={onOpenSearch} className="p-2 text-slate-400 hover:text-white">
-                 <IconSearch className="w-5 h-5" />
+             <button onClick={onOpenSearch} className="p-2 rounded-full bg-slate-800/50 text-slate-400 hover:text-white border border-transparent active:border-pulse-vitality/50 transition-all">
+                 <IconSearch className="w-4 h-4" />
              </button>
 
-             <div className="flex flex-col items-end">
-                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Score</span>
-                 <span className={`text-xs font-bold ${user.pulseScore > 100 ? 'text-emerald-400' : 'text-white'}`}>{user.pulseScore}</span>
+             {/* Minimal Score Pill */}
+             <div className="bg-slate-800/80 px-2 py-1 rounded-full border border-slate-700 flex items-center gap-1.5">
+                <div className={`w-2 h-2 rounded-full ${user.pulseScore > 100 ? 'bg-emerald-400 animate-pulse' : 'bg-pulse-vitality'}`}></div>
+                <span className="text-xs font-bold text-white">{user.pulseScore}</span>
              </div>
-             <div className={`w-8 h-8 rounded-full border-2 ${ringClass} p-[1px] relative`}>
+
+             <div className={`w-8 h-8 rounded-full border-[1.5px] ${ringClass} p-[1px] relative cursor-pointer`} onClick={() => onNavigate('PROFILE')}>
                  <img src={user.avatar} alt="User" className="w-full h-full rounded-full object-cover" />
-                 {user.isFounder ? (
-                     <div className="absolute -bottom-1 -right-1 bg-pulse-base rounded-full p-0.5">
-                         <IconCrown className="w-3.5 h-3.5 text-yellow-500 fill-current" />
-                     </div>
-                 ) : user.isVerified && (
-                     <div className="absolute -bottom-1 -right-1 bg-pulse-base rounded-full p-0.5">
-                         <IconBadgeCheck className="w-3.5 h-3.5 text-pulse-vitality fill-current" />
-                     </div>
-                 )}
              </div>
         </div>
       </header>
 
-      {/* Mobile Bottom Navigation Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-pulse-base border-t border-slate-800 z-50 px-2 pb-safe-area pt-2 flex justify-between items-center h-16 safe-area-pb">
+      {/* Mobile Bottom Navigation Bar - Floating Action Button Fix */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-pulse-base/95 backdrop-blur-lg border-t border-slate-800 z-50 px-2 pb-safe-area flex justify-between items-center h-[60px] safe-area-pb">
         <MobileNavItem view="HOME" icon={IconVitality} />
         <MobileNavItem view="POCKETS" icon={IconPockets} />
         
-        {/* Central Create Button (Floating Look) */}
-        <div className="relative -top-5">
+        {/* Central Create Button (Clean Floating Look) */}
+        <div className="relative -top-6">
             <button 
                 onClick={() => onTriggerPost('')}
-                className="w-14 h-14 bg-pulse-vitality rounded-full flex items-center justify-center shadow-lg shadow-yellow-500/20 border-4 border-pulse-base active:scale-95 transition-transform"
+                className="w-14 h-14 bg-gradient-to-br from-pulse-vitality to-yellow-500 rounded-full flex items-center justify-center shadow-lg shadow-yellow-500/30 border-[4px] border-pulse-base active:scale-95 transition-transform"
             >
-                <IconPlus className="w-7 h-7 text-pulse-dark" />
+                <IconPlus className="w-7 h-7 text-pulse-dark stroke-[3px]" />
             </button>
         </div>
 
@@ -169,16 +162,14 @@ const Layout: React.FC<LayoutProps> = ({ user, children, currentView, onNavigate
           {/* Header & Toggle */}
           <div className={`p-6 flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} mb-4`}>
              {!isSidebarCollapsed && (
-                <div className="flex items-center space-x-2 cursor-pointer transition-opacity duration-300" onClick={() => onNavigate('HOME')}>
-                    <div className="w-8 h-8 bg-pulse-vitality rounded-full flex items-center justify-center shadow-lg shadow-yellow-500/20 flex-shrink-0">
-                    <IconVitality className="text-pulse-dark w-5 h-5" />
-                    </div>
+                <div className="flex items-center space-x-3 cursor-pointer transition-opacity duration-300" onClick={() => onNavigate('HOME')}>
+                    <PulseOutLogo size={36} />
                     <h1 className="text-xl font-bold tracking-tight text-white whitespace-nowrap">PULSE<span className="text-pulse-vitality">OUT</span></h1>
                 </div>
              )}
              {isSidebarCollapsed && (
-                 <div className="w-8 h-8 bg-pulse-vitality rounded-full flex items-center justify-center shadow-lg shadow-yellow-500/20 flex-shrink-0 cursor-pointer" onClick={() => setIsSidebarCollapsed(false)}>
-                    <IconVitality className="text-pulse-dark w-5 h-5" />
+                 <div className="cursor-pointer" onClick={() => setIsSidebarCollapsed(false)}>
+                    <PulseOutLogo size={36} />
                  </div>
              )}
              
@@ -285,7 +276,7 @@ const Layout: React.FC<LayoutProps> = ({ user, children, currentView, onNavigate
                             <IconBadgeCheck className="w-3 h-3 text-pulse-vitality fill-current" />
                         )}
                     </p>
-                    <p className="text-xs text-slate-400 truncate">{user.handle}</p>
+                    {/* Handle Removed from here */}
                     </div>
                 </div>
                 
@@ -317,9 +308,9 @@ const Layout: React.FC<LayoutProps> = ({ user, children, currentView, onNavigate
       </aside>
 
       {/* Main Content Area */}
-      {/* Added bottom padding for mobile to account for Bottom Nav */}
-      <main className="flex-1 min-w-0 transition-all duration-300 pb-20 md:pb-0">
-          <div className="max-w-2xl mx-auto p-4 md:p-8">
+      {/* Added more bottom padding for mobile (pb-24) to ensure card content isn't hidden behind the floating button */}
+      <main className="flex-1 min-w-0 transition-all duration-300 pb-24 md:pb-0">
+          <div className="max-w-2xl mx-auto md:p-8 p-0"> {/* Removed side padding on mobile for full-bleed feel */}
             {children}
           </div>
       </main>
